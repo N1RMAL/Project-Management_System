@@ -30,29 +30,64 @@ const App = () => {
   };
 
   const addTask = (task) => {
-    setTasks([...tasks, { ...task, status: "todo", assignedTo: [], time: 0 }]);
+    setTasks([...tasks, { ...task, id: tasks.length, status: "todo", assignedTo: [], time: 0, schedule: null, useTimer: true }]);
   };
 
   const updateTask = (id, updatedTask) => {
     setTasks((prevTasks) =>
-      prevTasks.map((task, index) =>
-        index === id ? { ...task, ...updatedTask } : task
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, ...updatedTask } : task
       )
     );
 
-    if (updatedTask.status === "completed") {
+    if (updatedTask?.status === "completed") {
+      if (updatedTask.useTimer && updatedTask.time === 0) {
+        alert("Please stop the timer before completing the task.");
+        return;
+      }
+      if (!updatedTask.useTimer && !updatedTask.schedule) {
+        alert("Please set a schedule before completing the task.");
+        return;
+      }
+
+      const totalTime = updatedTask.useTimer
+        ? updatedTask.time
+        : calculateScheduledTime(updatedTask.schedule);
+
       setCompletedTasks((prevCompleted) => [
         ...prevCompleted,
-        { ...updatedTask, time: updatedTask.time || 0 },
+        { ...updatedTask, time: totalTime },
       ]);
-      setTasks((prevTasks) => prevTasks.filter((_, index) => index !== id));
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
     }
+  };
+
+  const assignUser = (id, user) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id
+          ? { ...task, assignedTo: [...task.assignedTo, user] }
+          : task
+      )
+    );
   };
 
   const addUser = (user) => {
     if (!users.includes(user)) {
       setUsers([...users, user]);
     }
+  };
+
+  const calculateScheduledTime = (schedule) => {
+    if (!schedule) return 0;
+    const [start, end] = schedule.split("-").map((time) => {
+      const [hours, minutes] = time.split(":").map(Number);
+      return hours * 60 + minutes;
+    });
+    const durationInMinutes = end - start;
+    const hours = Math.floor(durationInMinutes / 60);
+    const minutes = durationInMinutes % 60;
+    return { hours, minutes };
   };
 
   return (
@@ -68,7 +103,7 @@ const App = () => {
             <main className="app-main">
               <div className="task-section">
                 <TaskForm addTask={addTask} users={users} addUser={addUser} />
-                <TaskList tasks={tasks} updateTask={updateTask} users={users} />
+                <TaskList tasks={tasks} updateTask={updateTask} assignUser={assignUser} users={users} />
               </div>
               <div className="completed-section">
                 <CompletedTasks completedTasks={completedTasks} />

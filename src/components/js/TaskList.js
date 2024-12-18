@@ -2,7 +2,7 @@ import React from "react";
 import TaskCard from "./TaskCard";
 import "../css/TaskList.css";
 
-const TaskList = ({ tasks, updateTask, users }) => {
+const TaskList = ({ tasks, updateTask, assignUser, users }) => {
   return (
     <div className="task-list">
       <h2>Tasks</h2>
@@ -12,8 +12,9 @@ const TaskList = ({ tasks, updateTask, users }) => {
         tasks.map((task, index) => (
           <TaskCard
             key={index}
-            task={task}
-            updateTask={(updatedTask) => updateTask(index, updatedTask)}
+            task={{ ...task, id: index }} // Ensure id is passed
+            updateTask={updateTask}
+            assignUser={assignUser}
             users={users}
           />
         ))
@@ -21,5 +22,6 @@ const TaskList = ({ tasks, updateTask, users }) => {
     </div>
   );
 };
+
 
 export default TaskList;

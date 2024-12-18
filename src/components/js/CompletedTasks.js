@@ -13,7 +13,11 @@ const CompletedTasks = ({ completedTasks }) => {
             <li key={index} className="completed-task-item">
               <div className="task-header">
                 <h3 className="task-name">{task.name}</h3>
-                <span className="task-time">⏱ {task.time}s</span>
+                {task.useTimer ? (
+                  <span className="task-time">⏱ {task.time}s</span>
+                ) : (
+                  <span className="task-time">⏱ {task.time.hours}h {task.time.minutes}m</span>
+                )}
               </div>
               <p className="task-description">{task.description}</p>
               <p className="task-assigned-to">

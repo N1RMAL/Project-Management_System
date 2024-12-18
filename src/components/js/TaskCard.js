@@ -2,22 +2,48 @@ import React, { useState } from "react";
 import Timer from "./Timer";
 import "../css/TaskCard.css";
 
-const TaskCard = ({ task, updateTask, users }) => {
-  const [status, setStatus] = useState(task.status);
+const TaskCard = ({ task, updateTask, assignUser, users }) => {
+  const [schedule, setSchedule] = useState(task.schedule || "");
+  const [useTimer, setUseTimer] = useState(task.useTimer);
+  const [selectedUser, setSelectedUser] = useState("");
 
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
-    setStatus(newStatus);
-    updateTask({ ...task, status: newStatus, assignedTo: task.assignedTo || [] });
+  
+    if (newStatus === "in-progress") {
+      updateTask(task.id, { ...task, status: newStatus });
+      return;
+    }
+  
+    if (newStatus === "completed") {
+      if (useTimer && task.time === 0) {
+        alert("Please stop the timer before completing the task.");
+        return;
+      }
+      if (!useTimer && !schedule) {
+        alert("Please set a schedule before completing the task.");
+        return;
+      }
+  
+      updateTask(task.id, { ...task, status: newStatus, schedule, useTimer });
+    }
   };
   
 
-  const assignToUser = (user) => {
-    if (!task.assignedTo) {
-      task.assignedTo = []; // Initialize if undefined
-    }
-    if (!task.assignedTo.includes(user)) {
-      updateTask({ ...task, assignedTo: [...task.assignedTo, user] });
+  const handleScheduleChange = (e) => {
+    setSchedule(e.target.value);
+    updateTask(task.id, { ...task, schedule: e.target.value });
+  };
+
+  const toggleTimerOrSchedule = () => {
+    setUseTimer(!useTimer);
+    updateTask(task.id, { ...task, useTimer: !useTimer });
+  };
+
+  const handleAssignUser = () => {
+    if (selectedUser) {
+      assignUser(task.id, selectedUser);
+      setSelectedUser("");
     }
   };
 
@@ -26,24 +52,53 @@ const TaskCard = ({ task, updateTask, users }) => {
       <h3>{task.name}</h3>
       <p>{task.description}</p>
       <p>
-        Assigned To: {task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo.join(", ") : "Not Assigned"}
+        <strong>Assigned To:</strong> {task.assignedTo.length > 0 ? task.assignedTo.join(", ") : "Not Assigned"}
       </p>
-      <div className="assign-user">
-        <select onChange={(e) => assignToUser(e.target.value)}>
-          <option value="">Assign to User</option>
+      <select value={task.status} onChange={handleStatusChange} className="status-select">
+        <option value="todo">To-Do</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+      </select>
+      {task.status === "in-progress" && (
+        <>
+          <div className="toggle-section">
+            <button onClick={toggleTimerOrSchedule} className="btn-toggle">
+              {useTimer ? "Switch to Schedule" : "Switch to Timer"}
+            </button>
+          </div>
+          {useTimer ? (
+            <Timer task={task} updateTask={updateTask} />
+          ) : (
+            <div className="schedule-section">
+              <label>Schedule (HH:MM-HH:MM):</label>
+              <input
+                type="text"
+                value={schedule}
+                onChange={handleScheduleChange}
+                placeholder="e.g., 08:00-13:00"
+              />
+            </div>
+          )}
+        </>
+      )}
+      <div className="assign-section">
+        <label>Assign User:</label>
+        <select
+          value={selectedUser}
+          onChange={(e) => setSelectedUser(e.target.value)}
+          className="assign-select"
+        >
+          <option value="">Select User</option>
           {users.map((user, index) => (
             <option key={index} value={user}>
               {user}
             </option>
           ))}
         </select>
+        <button onClick={handleAssignUser} className="btn-assign">
+          Assign
+        </button>
       </div>
-      <select className="status-select" value={status} onChange={handleStatusChange}>
-        <option value="todo">To-Do</option>
-        <option value="in-progress">In Progress</option>
-        <option value="completed">Completed</option>
-      </select>
-      {status === "in-progress" && <Timer task={task} updateTask={updateTask} />}
     </div>
   );
 };

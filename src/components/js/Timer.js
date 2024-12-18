@@ -1,39 +1,42 @@
-import React, { useEffect, useState } from "react";
+// components/js/Timer.js
+import React, { useState, useEffect } from "react";
 import "../css/Timer.css";
 
 const Timer = ({ task, updateTask }) => {
-  const [time, setTime] = useState(task.time || 0); // Initialize time with the task's current time
+  const [time, setTime] = useState(task.time || 0);
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
-    let interval = null;
-
+    let timer;
     if (isRunning) {
-      // Increment the timer every second if running
-      interval = setInterval(() => {
-        setTime((prevTime) => prevTime + 1);
+      timer = setInterval(() => {
+        setTime((prevTime) => {
+          const newTime = prevTime + 1;
+          updateTask(task.id, { time: newTime }); // Update task time
+          return newTime;
+        });
       }, 1000);
-    } else if (!isRunning && task.time !== time) {
-      // Sync the time with the parent when the timer is stopped
-      updateTask({ ...task, time });
     }
-
-    return () => clearInterval(interval); // Cleanup interval on unmount
-  }, [isRunning, time, task, updateTask]);
+    return () => clearInterval(timer);
+  }, [isRunning, updateTask, task.id]);
 
   const toggleTimer = () => {
-    if (task.status !== "in-progress") {
-      alert("Timer can only be started for tasks in progress.");
-      return;
-    }
-    setIsRunning((prevState) => !prevState); // Toggle the timer
+    setIsRunning(!isRunning);
+  };
+
+  const stopTimer = () => {
+    setIsRunning(false);
+    updateTask(task.id, { ...task, time }); // Save final time
   };
 
   return (
     <div className="timer">
-      <p>Time Spent: {time}s</p>
-      <button onClick={toggleTimer} className="btn-primary">
-        {isRunning ? "Pause" : "Start"} Timer
+      <p>Time Spent: {Math.floor(time / 60)} min {time % 60} sec</p>
+      <button onClick={toggleTimer} className="btn-timer">
+        {isRunning ? "Pause" : "Start"}
+      </button>
+      <button onClick={stopTimer} className="btn-timer-stop">
+        Stop Timer
       </button>
     </div>
   );
