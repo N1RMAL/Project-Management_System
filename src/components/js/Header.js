@@ -1,4 +1,3 @@
-// Header.js
 import React from "react";
 import "../css/Header.css";
 
@@ -8,7 +7,7 @@ const Header = ({ onLogout, onGroupSelect }) => {
       <div className="logo">Task Manager</div>
       <nav className="nav-links">
         <a href="#" onClick={() => onGroupSelect(null)}>
-          Home
+          Dashboard
         </a>
         <a href="#" onClick={() => onGroupSelect("groups")}>
           Groups

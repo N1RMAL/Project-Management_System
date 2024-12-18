@@ -5,7 +5,6 @@ import CompletedTasks from "./components/js/CompletedTasks";
 import LoginRegister from "./components/js/LoginRegister";
 import Header from "./components/js/Header";
 import GroupSelection from "./components/js/GroupSelection";
-import Timer from "./components/js/Timer";
 import "./App.css";
 
 const App = () => {

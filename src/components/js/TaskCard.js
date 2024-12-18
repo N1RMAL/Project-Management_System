@@ -3,9 +3,11 @@ import Timer from "./Timer";
 import "../css/TaskCard.css";
 
 const TaskCard = ({ task, updateTask, assignUser, users }) => {
-  const [schedule, setSchedule] = useState(task.schedule || "");
+  const [startTime, setStartTime] = useState({ hours: "", minutes: "" });
+  const [endTime, setEndTime] = useState({ hours: "", minutes: "" });
   const [useTimer, setUseTimer] = useState(task.useTimer);
   const [selectedUser, setSelectedUser] = useState("");
+  const [scheduleSet, setScheduleSet] = useState(false);
 
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
@@ -16,22 +18,39 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
     }
 
     if (newStatus === "completed") {
+      if (task.assignedTo.length === 0) {
+        alert("Please assign a user before completing the task.");
+        return;
+      }
       if (useTimer && task.time === 0) {
         alert("Please stop the timer before completing the task.");
         return;
       }
-      if (!useTimer && !schedule) {
-        alert("Please set a schedule before completing the task.");
+      if (!useTimer && !scheduleSet) {
+        alert("Please set a valid schedule before completing the task.");
         return;
       }
 
+      const schedule = `${startTime.hours}:${startTime.minutes}-${endTime.hours}:${endTime.minutes}`;
       updateTask(task.id, { ...task, status: newStatus, schedule, useTimer });
     }
   };
 
-  const handleScheduleChange = (e) => {
-    setSchedule(e.target.value);
-    updateTask(task.id, { ...task, schedule: e.target.value });
+  const handleTimeChange = (e, type, period) => {
+    const value = e.target.value.replace(/\D/, ""); // Remove non-numeric characters
+    if (type === "start") {
+      setStartTime((prev) => ({ ...prev, [period]: value }));
+    } else {
+      setEndTime((prev) => ({ ...prev, [period]: value }));
+    }
+  };
+
+  const submitSchedule = () => {
+    if (!startTime.hours || !startTime.minutes || !endTime.hours || !endTime.minutes) {
+      alert("Please complete both start and end times.");
+      return;
+    }
+    setScheduleSet(true);
   };
 
   const toggleTimerOrSchedule = () => {
@@ -94,15 +113,62 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
           </div>
           {useTimer ? (
             <Timer task={task} updateTask={updateTask} />
+          ) : scheduleSet ? (
+            <div className="schedule-display">
+              <p>
+                <strong>Start Time:</strong> {startTime.hours}:{startTime.minutes}
+              </p>
+              <p>
+                <strong>End Time:</strong> {endTime.hours}:{endTime.minutes}
+              </p>
+              <button
+                onClick={() => setScheduleSet(false)}
+                className="btn-change-schedule"
+              >
+                Change Schedule
+              </button>
+            </div>
           ) : (
             <div className="schedule-section">
-              <label>Schedule (HH:MM-HH:MM):</label>
-              <input
-                type="text"
-                value={schedule}
-                onChange={handleScheduleChange}
-                placeholder="e.g., 08:00-13:00"
-              />
+              <label>Start Time:</label>
+              <div className="time-input">
+                <input
+                  type="text"
+                  value={startTime.hours}
+                  onChange={(e) => handleTimeChange(e, "start", "hours")}
+                  maxLength={2}
+                  placeholder="HH"
+                />
+                :
+                <input
+                  type="text"
+                  value={startTime.minutes}
+                  onChange={(e) => handleTimeChange(e, "start", "minutes")}
+                  maxLength={2}
+                  placeholder="MM"
+                />
+              </div>
+              <label>End Time:</label>
+              <div className="time-input">
+                <input
+                  type="text"
+                  value={endTime.hours}
+                  onChange={(e) => handleTimeChange(e, "end", "hours")}
+                  maxLength={2}
+                  placeholder="HH"
+                />
+                :
+                <input
+                  type="text"
+                  value={endTime.minutes}
+                  onChange={(e) => handleTimeChange(e, "end", "minutes")}
+                  maxLength={2}
+                  placeholder="MM"
+                />
+              </div>
+              <button onClick={submitSchedule} className="btn-schedule">
+                Set Schedule
+              </button>
             </div>
           )}
         </div>
