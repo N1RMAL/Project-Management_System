@@ -1,0 +1,17 @@
+.timer {
+    margin-top: 10px;
+  }
+  
+  .timer button {
+    margin-top: 5px;
+    padding: 10px;
+    background-color: #ffc107;
+    border: none;
+    color: #333;
+    border-radius: 5px;
+  }
+  
+  .timer button:hover {
+    background-color: #e0a800;
+  }
+  

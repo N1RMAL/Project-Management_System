@@ -1,0 +1,30 @@
+.app-container {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+.app-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.task-section {
+  flex: 1;
+  max-width: 50%;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.completed-section {
+  flex: 1;
+  max-width: 50%;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}

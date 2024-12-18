@@ -1,0 +1,36 @@
+.group-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: #f9f9f9;
+    padding: 20px;
+  }
+  
+  .group-selection h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .group-options {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .group-button {
+    padding: 15px 30px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .group-button:hover {
+    background-color: #0056b3;
+  }
+  
