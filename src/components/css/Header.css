@@ -1,50 +1,67 @@
-.header-container {
+.header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #007bff;
+  background-color: #343a40;
+  color: white;
   padding: 10px 20px;
-  color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  flex-wrap: wrap; /* Ensure elements wrap on smaller screens */
 }
 
-.header-left {
-  cursor: pointer;
+.header .logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
-.header-center {
-  flex: 1;
+.header .nav-links {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap; /* Allow wrapping for navigation items */
+  gap: 15px;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
+.header .nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.3s;
 }
 
-.btn-groups {
-  background-color: #28a745;
-  color: #fff;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.header .nav-links a:hover {
+  color: #007bff;
 }
 
-.btn-groups:hover {
-  background-color: #218838;
-}
-
-.btn-logout {
+.header .logout-btn {
   background-color: #dc3545;
-  color: #fff;
+  color: white;
   border: none;
-  padding: 10px;
   border-radius: 5px;
+  padding: 5px 10px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.btn-logout:hover {
-  background-color: #c82333;
+.header .logout-btn:hover {
+  background-color: #a71d2a;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column; /* Stack header items vertically on small screens */
+    align-items: flex-start;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: space-between; /* Adjust navigation links for better spacing */
+  }
+
+  .logout-btn {
+    align-self: flex-end; /* Align logout button to the end */
+  }
 }

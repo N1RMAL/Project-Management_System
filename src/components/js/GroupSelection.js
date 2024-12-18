@@ -7,10 +7,10 @@ const GroupSelection = ({ onGroupSelect }) => {
       <h2>Select a Group</h2>
       <div className="group-options">
         <button onClick={() => onGroupSelect("HR Group")} className="group-button">
-          HR Group
+          HR Services
         </button>
         <button onClick={() => onGroupSelect("Research and Development Group")} className="group-button">
-          Research and Development Group
+          Research and Development 
         </button>
         <button onClick={() => onGroupSelect("Accounting")} className="group-button">
           Accounting

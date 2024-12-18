@@ -9,12 +9,12 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
 
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
-  
+
     if (newStatus === "in-progress") {
       updateTask(task.id, { ...task, status: newStatus });
       return;
     }
-  
+
     if (newStatus === "completed") {
       if (useTimer && task.time === 0) {
         alert("Please stop the timer before completing the task.");
@@ -24,11 +24,10 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
         alert("Please set a schedule before completing the task.");
         return;
       }
-  
+
       updateTask(task.id, { ...task, status: newStatus, schedule, useTimer });
     }
   };
-  
 
   const handleScheduleChange = (e) => {
     setSchedule(e.target.value);
@@ -49,18 +48,45 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
 
   return (
     <div className="task-card">
-      <h3>{task.name}</h3>
-      <p>{task.description}</p>
-      <p>
-        <strong>Assigned To:</strong> {task.assignedTo.length > 0 ? task.assignedTo.join(", ") : "Not Assigned"}
-      </p>
-      <select value={task.status} onChange={handleStatusChange} className="status-select">
-        <option value="todo">To-Do</option>
-        <option value="in-progress">In Progress</option>
-        <option value="completed">Completed</option>
-      </select>
+      <div className="task-header">
+        <div className="task-info">
+          <h3>{task.name}</h3>
+          <p>{task.description}</p>
+        </div>
+        <div className="assigned-to">
+          <strong>Assigned To:</strong> {task.assignedTo.length > 0 ? task.assignedTo.join(", ") : "Not Assigned"}
+        </div>
+      </div>
+      <div className="task-actions">
+        <div className="assign-user">
+          <label>Assign User:</label>
+          <select
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+            className="assign-select"
+          >
+            <option value="">Select User</option>
+            {users.map((user, index) => (
+              <option key={index} value={user}>
+                {user}
+              </option>
+            ))}
+          </select>
+          <button onClick={handleAssignUser} className="btn-assign">
+            Assign
+          </button>
+        </div>
+        <div className="task-status">
+          <label>Status:</label>
+          <select value={task.status} onChange={handleStatusChange} className="status-select">
+            <option value="todo">To-Do</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      </div>
       {task.status === "in-progress" && (
-        <>
+        <div className="schedule-timer-section">
           <div className="toggle-section">
             <button onClick={toggleTimerOrSchedule} className="btn-toggle">
               {useTimer ? "Switch to Schedule" : "Switch to Timer"}
@@ -79,26 +105,8 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
               />
             </div>
           )}
-        </>
+        </div>
       )}
-      <div className="assign-section">
-        <label>Assign User:</label>
-        <select
-          value={selectedUser}
-          onChange={(e) => setSelectedUser(e.target.value)}
-          className="assign-select"
-        >
-          <option value="">Select User</option>
-          {users.map((user, index) => (
-            <option key={index} value={user}>
-              {user}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleAssignUser} className="btn-assign">
-          Assign
-        </button>
-      </div>
     </div>
   );
 };

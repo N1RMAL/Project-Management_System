@@ -1,26 +1,22 @@
+// Header.js
 import React from "react";
 import "../css/Header.css";
 
 const Header = ({ onLogout, onGroupSelect }) => {
-  const handleHomeClick = () => {
-    window.location.reload(); // Refresh the page
-  };
-
   return (
-    <header className="header-container">
-      <div className="header-left" onClick={handleHomeClick}>
-        <h1>Home Page</h1>
-      </div>
-      <div className="header-center">
-        <button onClick={() => onGroupSelect(null)} className="btn-groups">
+    <header className="header">
+      <div className="logo">Task Manager</div>
+      <nav className="nav-links">
+        <a href="#" onClick={() => onGroupSelect(null)}>
+          Home
+        </a>
+        <a href="#" onClick={() => onGroupSelect("groups")}>
           Groups
-        </button>
-      </div>
-      <div className="header-right">
-        <button onClick={onLogout} className="btn-logout">
+        </a>
+        <button className="logout-btn" onClick={onLogout}>
           Logout
         </button>
-      </div>
+      </nav>
     </header>
   );
 };

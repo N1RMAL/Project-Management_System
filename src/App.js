@@ -5,6 +5,7 @@ import CompletedTasks from "./components/js/CompletedTasks";
 import LoginRegister from "./components/js/LoginRegister";
 import Header from "./components/js/Header";
 import GroupSelection from "./components/js/GroupSelection";
+import Timer from "./components/js/Timer";
 import "./App.css";
 
 const App = () => {
@@ -101,12 +102,42 @@ const App = () => {
             <GroupSelection onGroupSelect={handleGroupSelect} />
           ) : (
             <main className="app-main">
-              <div className="task-section">
-                <TaskForm addTask={addTask} users={users} addUser={addUser} />
-                <TaskList tasks={tasks} updateTask={updateTask} assignUser={assignUser} users={users} />
+              <div className="task-form-section">
+                <div className="task-creation">
+                  <h2 className="centered-heading">Create Task</h2>
+                  <TaskForm addTask={addTask} />
+                </div>
+                <div className="user-creation">
+                  <h2 className="centered-heading">Add User</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const user = e.target.elements.username.value;
+                      if (user.trim()) {
+                        addUser(user.trim());
+                        e.target.reset();
+                      }
+                    }}
+                    className="centered-form"
+                  >
+                    <input
+                      type="text"
+                      name="username"
+                      placeholder="Enter user name"
+                      required
+                      className="centered-input"
+                    />
+                    <button type="submit" className="centered-button">Add User</button>
+                  </form>
+                </div>
               </div>
-              <div className="completed-section">
-                <CompletedTasks completedTasks={completedTasks} />
+              <div className="task-lists-container">
+                <div className="current-tasks-section">
+                  <TaskList tasks={tasks} updateTask={updateTask} assignUser={assignUser} users={users} />
+                </div>
+                <div className="completed-tasks-section">
+                  <CompletedTasks completedTasks={completedTasks} />
+                </div>
               </div>
             </main>
           )}

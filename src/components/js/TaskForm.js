@@ -38,15 +38,6 @@ const TaskForm = ({ addTask, users, addUser }) => {
         ></textarea>
         <button type="submit" className="btn-primary">Add Task</button>
       </form>
-      <div className="user-form">
-        <input
-          type="text"
-          placeholder="Add User"
-          value={newUser}
-          onChange={(e) => setNewUser(e.target.value)}
-        />
-        <button onClick={handleAddUser} className="btn-secondary">Add User</button>
-      </div>
     </div>
   );
 };
