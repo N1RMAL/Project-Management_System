@@ -1,18 +1,20 @@
 import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import TaskForm from "./components/js/TaskForm";
 import TaskList from "./components/js/TaskList";
 import CompletedTasks from "./components/js/CompletedTasks";
-import LoginRegister from "./components/js/LoginRegister";
+import Login from "./components/js/Login";
 import Header from "./components/js/Header";
 import GroupSelection from "./components/js/GroupSelection";
 import "./App.css";
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("access_token") // Check if user is logged in
+  );
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
-  const [users, setUsers] = useState(["You"]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -21,6 +23,7 @@ const App = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setSelectedGroup(null);
+    localStorage.removeItem("access_token"); // Clear stored token on logout
   };
 
   const handleGroupSelect = (group) => {
@@ -30,14 +33,24 @@ const App = () => {
   };
 
   const addTask = (task) => {
-    setTasks([...tasks, { ...task, id: tasks.length, status: "todo", assignedTo: [], time: 0, schedule: null, useTimer: true }]);
+    setTasks([
+      ...tasks,
+      {
+        ...task,
+        group: selectedGroup, // Automatically attach the selected group
+        id: tasks.length,
+        status: "todo",
+        assignedTo: [],
+        time: 0,
+        schedule: null,
+        useTimer: true,
+      },
+    ]);
   };
 
   const updateTask = (id, updatedTask) => {
     setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, ...updatedTask } : task
-      )
+      prevTasks.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
     );
 
     if (updatedTask?.status === "completed") {
@@ -65,17 +78,9 @@ const App = () => {
   const assignUser = (id, user) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === id
-          ? { ...task, assignedTo: [...task.assignedTo, user] }
-          : task
+        task.id === id ? { ...task, assignedTo: [...task.assignedTo, user] } : task
       )
     );
-  };
-
-  const addUser = (user) => {
-    if (!users.includes(user)) {
-      setUsers([...users, user]);
-    }
   };
 
   const calculateScheduledTime = (schedule) => {
@@ -91,58 +96,53 @@ const App = () => {
   };
 
   return (
-    <div className="app-container">
-      {!isAuthenticated ? (
-        <LoginRegister onAuthenticate={handleLogin} />
-      ) : (
-        <>
-          <Header onLogout={handleLogout} onGroupSelect={handleGroupSelect} />
-          {!selectedGroup ? (
-            <GroupSelection onGroupSelect={handleGroupSelect} />
-          ) : (
-            <main className="app-main">
-              <div className="task-form-section">
-                <div className="task-creation">
-                  <h2 className="centered-heading">Create Task</h2>
-                  <TaskForm addTask={addTask} />
-                </div>
-                <div className="user-creation">
-                  <h2 className="centered-heading">Add User</h2>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const user = e.target.elements.username.value;
-                      if (user.trim()) {
-                        addUser(user.trim());
-                        e.target.reset();
-                      }
-                    }}
-                    className="centered-form"
-                  >
-                    <input
-                      type="text"
-                      name="username"
-                      placeholder="Enter user name"
-                      required
-                      className="centered-input"
-                    />
-                    <button type="submit" className="centered-button">Add User</button>
-                  </form>
-                </div>
-              </div>
-              <div className="task-lists-container">
-                <div className="current-tasks-section">
-                  <TaskList tasks={tasks} updateTask={updateTask} assignUser={assignUser} users={users} />
-                </div>
-                <div className="completed-tasks-section">
-                  <CompletedTasks completedTasks={completedTasks} />
-                </div>
-              </div>
-            </main>
-          )}
-        </>
-      )}
-    </div>
+    <Router>
+      <div className="app-container">
+        {!isAuthenticated ? (
+          <Routes>
+            <Route path="*" element={<Login onAuthenticate={handleLogin} />} />
+          </Routes>
+        ) : (
+          <>
+            <Header onLogout={handleLogout} onGroupSelect={handleGroupSelect} />
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  selectedGroup ? (
+                    <main className="app-main">
+                      <div className="task-form-section">
+                        <h2 className="centered-heading">Create Task</h2>
+                        <TaskForm addTask={addTask} selectedGroup={selectedGroup} />
+                      </div>
+                      <div className="task-lists-container">
+                        <div className="current-tasks-section">
+                          <TaskList
+                            tasks={tasks}
+                            updateTask={updateTask}
+                            assignUser={assignUser}
+                          />
+                        </div>
+                        <div className="completed-tasks-section">
+                          <CompletedTasks completedTasks={completedTasks} />
+                        </div>
+                      </div>
+                    </main>
+                  ) : (
+                    <GroupSelection onGroupSelect={handleGroupSelect} />
+                  )
+                }
+              />
+              <Route
+                path="/groups"
+                element={<GroupSelection onGroupSelect={handleGroupSelect} />}
+              />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </>
+        )}
+      </div>
+    </Router>
   );
 };
 
