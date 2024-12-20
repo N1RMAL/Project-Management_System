@@ -24,7 +24,7 @@ class Task(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)  # New field
-    assigned_to = models.ManyToManyField(User, related_name='tasks')
+    assigned_to = models.ManyToManyField(User, related_name='tasks', blank =True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -29,12 +29,27 @@ export const getUsers = async () => {
 };
 
 // Handle tasks
-export const getTasks = async () => {
+// export const getTasks = async (params = {}) => {
+//   try {
+//     const queryString = new URLSearchParams(params).toString(); // Convert params to query string
+//     const response = await API.get(`tasks/?${queryString}`); // Add query parameters to the URL
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error fetching tasks:", error);
+//     throw error; // Propagate the error to the calling function
+//   }
+// };
+export const getTasks = async (params = {}) => {
   try {
-    const response = await API.get("tasks/");
+    const queryString = new URLSearchParams(params).toString();
+    const response = await API.get(`tasks/?${queryString}`, {
+      headers: {
+        Authorization: `Token ${localStorage.getItem("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0NjkyNjQ2LCJpYXQiOjE3MzQ2OTIzNDYsImp0aSI6ImY0ZDIxNTNjYTdkMDRhYjFhZWI3YjAzOTNlNWUyYjU0IiwidXNlcl9pZCI6MX0.XMq6Ri2doZzvoxgt31lJuq8Ybt9uG4ZN_2UMSIZo6ZU")}`, // Pass stored token
+      },
+    });
     return response.data;
   } catch (error) {
-    console.error("Error fetching tasks:", error);
+    console.error("Error fetching tasks:", error.message || error);
     throw error;
   }
 };

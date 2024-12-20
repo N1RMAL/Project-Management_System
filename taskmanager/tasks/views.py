@@ -38,7 +38,6 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             return self.queryset
         return User.objects.filter(groups__members=self.request.user).distinct()
 
-
 class TaskViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Tasks.
@@ -47,25 +46,40 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    # Define allowed group IDs as a class variable for reuse
+    ALLOWED_GROUP_IDS = [1, 2, 3]
+
     def get_queryset(self):
         """
-        Return tasks for the groups the user is part of.
+        Return tasks for the allowed groups the user is part of.
         Optionally filter tasks by group ID using the `group` query parameter.
         """
         group_id = self.request.query_params.get("group")
         if group_id:
-            group = Group.objects.filter(id=group_id, members=self.request.user).first()
-            if not group:
+            # Validate the group and check membership
+            group_exists = Group.objects.filter(
+                id=group_id,
+                id__in=self.ALLOWED_GROUP_IDS,
+                members=self.request.user
+            ).exists()
+            if not group_exists:
                 raise PermissionDenied("You are not authorized to access this group.")
-            return Task.objects.filter(group=group)
-        return Task.objects.filter(group__members=self.request.user)
+            return Task.objects.filter(group_id=group_id)
+
+        # Return tasks for all allowed groups the user is a member of
+        return Task.objects.filter(
+            group__id__in=self.ALLOWED_GROUP_IDS,
+            group__members=self.request.user
+        )
 
     def perform_create(self, serializer):
         """
         Validate that the user creating the task belongs to the specified group.
         """
         group = serializer.validated_data.get("group")
-        if self.request.user not in group.members.all():
+        if group.id not in self.ALLOWED_GROUP_IDS:
+            raise PermissionDenied("Invalid group selected for the task.")
+        if not group.members.filter(id=self.request.user.id).exists():
             raise PermissionDenied("You are not authorized to create tasks for this group.")
         serializer.save()
 
@@ -74,6 +88,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         Validate that the user updating the task belongs to the group.
         """
         group = serializer.instance.group
-        if self.request.user not in group.members.all():
+        if group.id not in self.ALLOWED_GROUP_IDS:
+            raise PermissionDenied("Invalid group selected for the task.")
+        if not group.members.filter(id=self.request.user.id).exists():
             raise PermissionDenied("You are not authorized to update tasks for this group.")
         serializer.save()
+
+

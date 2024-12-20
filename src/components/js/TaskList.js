@@ -5,24 +5,34 @@ import { getTasks, updateTask } from "../../services/api"; // Import API functio
 
 const TaskList = ({ assignUser, users, selectedGroup }) => {
   const [tasks, setTasks] = useState([]); // State to hold tasks
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState(null); // Error state
 
   // Fetch tasks from the backend
   useEffect(() => {
     const fetchTasks = async () => {
+      if (!selectedGroup || !selectedGroup.id) {
+        console.error("Group not selected or invalid group.");
+        setError("Please select a valid group.");
+        setLoading(false);
+        return;
+      }
+  
       try {
-        const data = await getTasks({ group: selectedGroup.id }); // Pass group ID to API
+        setLoading(true);
+        const data = await getTasks({ group: selectedGroup.id });
         setTasks(data);
       } catch (err) {
         console.error("Error fetching tasks:", err);
+        setError("Failed to fetch tasks. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
-    if (selectedGroup) {
-      fetchTasks();
-    }
+  
+    fetchTasks();
   }, [selectedGroup]);
-
+  
   // Handle task updates
   const handleUpdateTask = async (taskId, updatedTaskData) => {
     try {
@@ -36,14 +46,22 @@ const TaskList = ({ assignUser, users, selectedGroup }) => {
     }
   };
 
+  if (!selectedGroup) {
+    return <p className="error-message">Please select a group to view tasks.</p>;
+  }
+
+  if (loading) {
+    return <p>Loading tasks...</p>;
+  }
+
+  if (error) {
+    return <p className="error-message">{error}</p>;
+  }
+
   return (
     <div className="task-list">
-      <h2>Tasks for {selectedGroup ? selectedGroup.name : "Group"}</h2>
-      {loading ? (
-        <p>Loading tasks...</p>
-      ) : error ? (
-        <p className="error">{error}</p>
-      ) : tasks.length === 0 ? (
+      <h2>Tasks for {selectedGroup.name}</h2>
+      {tasks.length === 0 ? (
         <p>No tasks available for this group. Create a task to get started!</p>
       ) : (
         tasks.map((task) => (

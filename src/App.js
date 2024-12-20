@@ -7,10 +7,11 @@ import Login from "./components/js/Login";
 import Header from "./components/js/Header";
 import GroupSelection from "./components/js/GroupSelection";
 import "./App.css";
+import API from "./services/api";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("access_token") // Check if user is logged in
+    !!localStorage.getItem("access_token")
   );
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -23,46 +24,37 @@ const App = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setSelectedGroup(null);
-    localStorage.removeItem("access_token"); // Clear stored token on logout
+    localStorage.removeItem("access_token");
   };
 
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
-    setTasks([]); // Reset tasks for new group
-    setCompletedTasks([]); // Reset completed tasks for new group
+    setTasks([]);
+    setCompletedTasks([]);
   };
 
-  const addTask = (task) => {
-    setTasks([
-      ...tasks,
-      {
+  const addTask = async (task) => {
+    try {
+      // Make an API call to save the task in the backend
+      const response = await API.post("tasks/", {
         ...task,
-        group: selectedGroup, // Automatically attach the selected group
-        id: tasks.length,
-        status: "todo",
-        assignedTo: [],
-        time: 0,
-        schedule: null,
-        useTimer: true,
-      },
-    ]);
+        group: selectedGroup.id, // Use the selected group ID
+      });
+  
+      // Update the local state with the newly created task
+      setTasks((prevTasks) => [...prevTasks, response.data]);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert("Failed to create task. Please try again.");
+    }
   };
-
+  
   const updateTask = (id, updatedTask) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
     );
 
     if (updatedTask?.status === "completed") {
-      if (updatedTask.useTimer && updatedTask.time === 0) {
-        alert("Please stop the timer before completing the task.");
-        return;
-      }
-      if (!updatedTask.useTimer && !updatedTask.schedule) {
-        alert("Please set a schedule before completing the task.");
-        return;
-      }
-
       const totalTime = updatedTask.useTimer
         ? updatedTask.time
         : calculateScheduledTime(updatedTask.schedule);
@@ -73,14 +65,6 @@ const App = () => {
       ]);
       setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
     }
-  };
-
-  const assignUser = (id, user) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, assignedTo: [...task.assignedTo, user] } : task
-      )
-    );
   };
 
   const calculateScheduledTime = (schedule) => {
@@ -120,7 +104,16 @@ const App = () => {
                           <TaskList
                             tasks={tasks}
                             updateTask={updateTask}
-                            assignUser={assignUser}
+                            assignUser={(id, user) => {
+                              setTasks((prevTasks) =>
+                                prevTasks.map((task) =>
+                                  task.id === id
+                                    ? { ...task, assignedTo: [...task.assignedTo, user] }
+                                    : task
+                                )
+                              );
+                            }}
+                            selectedGroup={selectedGroup}
                           />
                         </div>
                         <div className="completed-tasks-section">
@@ -147,3 +140,4 @@ const App = () => {
 };
 
 export default App;
+

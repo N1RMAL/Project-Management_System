@@ -30,7 +30,9 @@ class TaskSerializer(serializers.ModelSerializer):
     Serializer for Task model.
     Manages group and user relationships for task creation and retrieval.
     """
-    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())  # Accept group ID for task
+    group = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.filter(id__in=[1, 2, 3])  # Restrict to specific groups
+    )  # Accept group ID for task
     group_details = GroupSerializer(read_only=True, source='group')  # Provide nested group details for GET requests
     assigned_to = serializers.PrimaryKeyRelatedField(
         many=True, queryset=User.objects.all(), required=False
@@ -45,6 +47,15 @@ class TaskSerializer(serializers.ModelSerializer):
             'id', 'group', 'group_details', 'name', 'description',
             'assigned_to', 'assigned_to_details', 'status', 'created_at', 'updated_at'
         ]
+
+    def validate_group(self, value):
+        """
+        Ensure the group is valid and within the allowed groups.
+        """
+        allowed_group_ids = [1, 2, 3]
+        if value.id not in allowed_group_ids:
+            raise serializers.ValidationError("Please select a valid group.")
+        return value
 
     def create(self, validated_data):
         """
@@ -67,3 +78,4 @@ class TaskSerializer(serializers.ModelSerializer):
         if assigned_users is not None:
             instance.assigned_to.set(assigned_users)
         return instance
+

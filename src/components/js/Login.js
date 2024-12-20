@@ -9,23 +9,40 @@ const Login = ({ onAuthenticate }) => {
   const [loading, setLoading] = useState(false); // Track loading state
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true); // Start loading
-    setError(""); // Clear any previous errors
-
+    e.preventDefault(); // Prevent default form submission
+    setLoading(true); // Start loading spinner or state
+    setError(""); // Clear any existing error messages
+  
     try {
-      // Call the login API
+      // Call the login API with the provided username and password
       const data = await login({ username, password });
+  
+      // Store tokens in localStorage
       localStorage.setItem("access_token", data.access); // Save the access token
       localStorage.setItem("refresh_token", data.refresh); // Save the refresh token
-      onAuthenticate(); // Notify parent component of successful login
+  
+      // Notify parent component of successful authentication
+      onAuthenticate();
+  
+      // Optionally redirect the user to the dashboard or initial page
+      alert("Login successful!");
     } catch (err) {
-      console.error("Error during login:", err);
-      setError("Invalid username or password. Please try again.");
+      // Log the error for debugging purposes
+      console.error("Login error:", err.response || err.message);
+  
+      // Handle specific error cases
+      if (err.response && err.response.status === 401) {
+        setError("Invalid username or password. Please check your credentials and try again.");
+      } else if (err.response && err.response.status === 500) {
+        setError("Server error. Please try again later.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false); // End loading state
     }
   };
+  
 
   return (
     <div className="login-container">
