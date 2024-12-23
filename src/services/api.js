@@ -4,23 +4,45 @@ const API = axios.create({
   baseURL: "http://127.0.0.1:8000/api/", // Your Django API base URL
 });
 
-// Add token to requests if logged in
+// Add Authorization header to all requests
 API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("access_token");
+  async (config) => {
+    let token = localStorage.getItem("access_token");
+    
+    // Check if the token is expired and refresh it
     if (token) {
+      const isTokenExpired = (token) => {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          return payload.exp * 1000 < Date.now();
+        } catch {
+          return true;
+        }
+      };
+
+      if (isTokenExpired(token)) {
+        try {
+          const { access } = await refreshToken();
+          token = access;
+        } catch (error) {
+          console.error("Error refreshing token:", error.message || error);
+          logout();
+          throw new Error("Session expired. Please log in again.");
+        }
+      }
+
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
-//handle users
+
+// Handle users
 export const getUsers = async () => {
   try {
-    const response = await API.get("users/"); // Ensure this endpoint exists
+    const response = await API.get("users/");
     return response.data;
   } catch (error) {
     console.error("Error fetching users:", error.response?.data || error.message);
@@ -29,27 +51,13 @@ export const getUsers = async () => {
 };
 
 // Handle tasks
-// export const getTasks = async (params = {}) => {
-//   try {
-//     const queryString = new URLSearchParams(params).toString(); // Convert params to query string
-//     const response = await API.get(`tasks/?${queryString}`); // Add query parameters to the URL
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error fetching tasks:", error);
-//     throw error; // Propagate the error to the calling function
-//   }
-// };
 export const getTasks = async (params = {}) => {
   try {
     const queryString = new URLSearchParams(params).toString();
-    const response = await API.get(`tasks/?${queryString}`, {
-      headers: {
-        Authorization: `Token ${localStorage.getItem("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0NjkyNjQ2LCJpYXQiOjE3MzQ2OTIzNDYsImp0aSI6ImY0ZDIxNTNjYTdkMDRhYjFhZWI3YjAzOTNlNWUyYjU0IiwidXNlcl9pZCI6MX0.XMq6Ri2doZzvoxgt31lJuq8Ybt9uG4ZN_2UMSIZo6ZU")}`, // Pass stored token
-      },
-    });
+    const response = await API.get(`tasks/?${queryString}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching tasks:", error.message || error);
+    console.error("Error fetching tasks:", error.response?.data || error.message);
     throw error;
   }
 };

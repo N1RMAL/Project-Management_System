@@ -27,28 +27,40 @@ const App = () => {
     localStorage.removeItem("access_token");
   };
 
-  const handleGroupSelect = (group) => {
-    setSelectedGroup(group);
-    setTasks([]);
-    setCompletedTasks([]);
+  const handleGroupSelect = async (group) => {
+    if (group) {
+      console.log("Group selected:", group); // Debugging log
+      setSelectedGroup(group);
+      setTasks([]);
+      setCompletedTasks([]);
+  
+      try {
+        // Fetch tasks for the selected group
+        const response = await API.get(`tasks/?group=${group.id}`);
+        console.log("Fetched tasks for group:", response); // Debugging log
+        setTasks(response); // Update tasks with the fetched data
+      } catch (error) {
+        console.error("Error fetching tasks for the selected group:", error.message || error);
+        alert("Failed to fetch tasks. Please try again.");
+      }
+    } else {
+      console.error("Invalid group selected");
+    }
   };
-
+  
   const addTask = async (task) => {
     try {
-      // Make an API call to save the task in the backend
       const response = await API.post("tasks/", {
         ...task,
-        group: selectedGroup.id, // Use the selected group ID
+        group: selectedGroup.id, // Ensure group ID is passed
       });
-  
-      // Update the local state with the newly created task
       setTasks((prevTasks) => [...prevTasks, response.data]);
     } catch (error) {
       console.error("Error creating task:", error);
       alert("Failed to create task. Please try again.");
     }
   };
-  
+
   const updateTask = (id, updatedTask) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
@@ -122,7 +134,7 @@ const App = () => {
                       </div>
                     </main>
                   ) : (
-                    <GroupSelection onGroupSelect={handleGroupSelect} />
+                    <Navigate to="/groups" replace />
                   )
                 }
               />
@@ -140,4 +152,3 @@ const App = () => {
 };
 
 export default App;
-

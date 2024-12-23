@@ -1,48 +1,52 @@
 import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import TaskCard from "./TaskCard";
 import "../css/TaskList.css";
 import { getTasks, updateTask } from "../../services/api"; // Import API functions
 
 const TaskList = ({ assignUser, users, selectedGroup }) => {
-  const [tasks, setTasks] = useState([]); // State to hold tasks
-  const [loading, setLoading] = useState(false); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Fetch tasks from the backend
+  const fetchTasks = async () => {
+    if (!selectedGroup || !selectedGroup.id) {
+      console.error("Group not selected or invalid group.");
+      setError("Please select a valid group.");
+      setLoading(false);
+      return;
+    }
+
+    setError(null);
+    try {
+      setLoading(true);
+      const data = await getTasks({ group: selectedGroup.id });
+      setTasks(data);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Failed to fetch tasks. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTasks = async () => {
-      if (!selectedGroup || !selectedGroup.id) {
-        console.error("Group not selected or invalid group.");
-        setError("Please select a valid group.");
-        setLoading(false);
-        return;
-      }
-  
-      try {
-        setLoading(true);
-        const data = await getTasks({ group: selectedGroup.id });
-        setTasks(data);
-      } catch (err) {
-        console.error("Error fetching tasks:", err);
-        setError("Failed to fetch tasks. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
     fetchTasks();
   }, [selectedGroup]);
-  
-  // Handle task updates
+
   const handleUpdateTask = async (taskId, updatedTaskData) => {
+    setLoading(true);
     try {
-      const updatedTask = await updateTask(taskId, updatedTaskData); // Update task via API
+      const updatedTask = await updateTask(taskId, updatedTaskData);
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? updatedTask : task))
-      ); // Update the state
+      );
     } catch (err) {
       console.error("Error updating task:", err);
       setError("Failed to update task.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,7 +59,12 @@ const TaskList = ({ assignUser, users, selectedGroup }) => {
   }
 
   if (error) {
-    return <p className="error-message">{error}</p>;
+    return (
+      <div className="error-message">
+        <p>{error}</p>
+        <button onClick={() => fetchTasks()}>Retry</button>
+      </div>
+    );
   }
 
   return (
@@ -66,7 +75,7 @@ const TaskList = ({ assignUser, users, selectedGroup }) => {
       ) : (
         tasks.map((task) => (
           <TaskCard
-            key={task.id} // Use task ID from the backend
+            key={task.id}
             task={task}
             updateTask={handleUpdateTask}
             assignUser={assignUser}
@@ -76,6 +85,15 @@ const TaskList = ({ assignUser, users, selectedGroup }) => {
       )}
     </div>
   );
+};
+
+TaskList.propTypes = {
+  assignUser: PropTypes.func.isRequired,
+  users: PropTypes.array.isRequired,
+  selectedGroup: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+  }).isRequired,
 };
 
 export default TaskList;
