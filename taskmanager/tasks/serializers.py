@@ -30,6 +30,7 @@ class TaskSerializer(serializers.ModelSerializer):
     Serializer for Task model.
     Manages group and user relationships for task creation and retrieval.
     """
+    assigned_to = serializers.SerializerMethodField()
     group = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.filter(id__in=[1, 2, 3])  # Restrict to specific groups
     )  # Accept group ID for task

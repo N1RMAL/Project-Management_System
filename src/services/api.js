@@ -42,7 +42,8 @@ API.interceptors.request.use(
 // Handle users
 export const getUsers = async () => {
   try {
-    const response = await API.get("users/");
+    const response = await API.get("/users/");
+    console.log("Fetched users (API Response):", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching users:", error.response?.data || error.message);
@@ -54,13 +55,15 @@ export const getUsers = async () => {
 export const getTasks = async (params = {}) => {
   try {
     const queryString = new URLSearchParams(params).toString();
-    const response = await API.get(`tasks/?${queryString}`);
+    const response = await API.get(`tasks/?${queryString}`); // Simplified request
     return response.data;
   } catch (error) {
     console.error("Error fetching tasks:", error.response?.data || error.message);
     throw error;
   }
 };
+
+
 
 export const createTask = async (taskData) => {
   try {

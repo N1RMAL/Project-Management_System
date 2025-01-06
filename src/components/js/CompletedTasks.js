@@ -14,14 +14,24 @@ const CompletedTasks = ({ completedTasks }) => {
               <div className="task-header">
                 <h3 className="task-name">{task.name}</h3>
                 {task.useTimer ? (
-                  <span className="task-time">⏱ {task.time}s</span>
+                  <span className="task-time">
+                    ⏱ {task.time ?? "N/A"}s
+                  </span>
                 ) : (
-                  <span className="task-time">⏱ {task.time.hours}h {task.time.minutes}m</span>
+                  <span className="task-time">
+                    ⏱{" "}
+                    {task.time?.hours !== undefined && task.time?.minutes !== undefined
+                      ? `${task.time.hours}h ${task.time.minutes}m`
+                      : "Schedule not set"}
+                  </span>
                 )}
               </div>
               <p className="task-description">{task.description}</p>
               <p className="task-assigned-to">
-                <strong>Assigned To:</strong> {task.assignedTo.length > 0 ? task.assignedTo.join(", ") : "Not Assigned"}
+                <strong>Assigned To:</strong>{" "}
+                {task.assignedTo?.length > 0
+                  ? task.assignedTo.join(", ")
+                  : "Not Assigned"}
               </p>
             </li>
           ))}

@@ -28,25 +28,34 @@ const App = () => {
   };
 
   const handleGroupSelect = async (group) => {
-    if (group) {
-      console.log("Group selected:", group); // Debugging log
-      setSelectedGroup(group);
-      setTasks([]);
-      setCompletedTasks([]);
-  
-      try {
-        // Fetch tasks for the selected group
-        const response = await API.get(`tasks/?group=${group.id}`);
-        console.log("Fetched tasks for group:", response); // Debugging log
-        setTasks(response); // Update tasks with the fetched data
-      } catch (error) {
-        console.error("Error fetching tasks for the selected group:", error.message || error);
-        alert("Failed to fetch tasks. Please try again.");
-      }
-    } else {
+    if (!group) {
       console.error("Invalid group selected");
+      return;
+    }
+  
+    console.log("Group selected:", group); // Debugging log
+    setSelectedGroup(group); // Update selected group
+    setTasks([]); // Clear tasks state before fetching new tasks
+    setCompletedTasks([]); // Clear completed tasks state
+  
+    try {
+      // Fetch tasks for the selected group using group.id directly
+      const response = await API.get(`tasks/?group=${group.id}`);
+      console.log("Fetched tasks for group:", response.data); // Debugging log
+  
+      // Update tasks state with fetched data
+      const fetchedTasks = response.data || [];
+      setTasks(fetchedTasks.filter((task) => task.status !== "completed"));
+      setCompletedTasks(fetchedTasks.filter((task) => task.status === "completed"));
+    } catch (error) {
+      console.error(
+        "Error fetching tasks for the selected group:",
+        error.response?.data || error.message || error
+      );
+      alert("Failed to fetch tasks. Please try again.");
     }
   };
+  
   
   const addTask = async (task) => {
     try {

@@ -18,10 +18,12 @@ const TaskCard = ({ task, updateTask, assignUser }) => {
     // Fetch users from the backend
     const fetchUsers = async () => {
       try {
+        console.log("Fetching users...");
         const userData = await getUsers(); // API call to fetch users
+        console.log("Fetched users:", userData);
         setUsers(userData); // Update users state
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error in fetchUsers:", error.message || error);
       }
     };
 
@@ -78,11 +80,26 @@ const TaskCard = ({ task, updateTask, assignUser }) => {
   };
 
   const handleAssignUser = () => {
-    if (selectedUser) {
-      assignUser(task.id, selectedUser); // Call assignUser with the selected user
-      setSelectedUser(""); // Reset selected user
+    if (!task) {
+      console.error("Task is undefined");
+      return;
     }
+  
+    if (!selectedUser) {
+      alert("Please select a user to assign.");
+      return;
+    }
+  
+    console.log("Assigning user:", selectedUser, "to task:", task.id);
+  
+    const updatedTask = {
+      ...task,
+      assignedTo: [...(task.assignedTo || []), selectedUser], // Add the selected user to assignedTo
+    };
+  
+    assignUser(task.id, selectedUser);
   };
+  
 
   return (
     <div className="task-card">
@@ -93,7 +110,7 @@ const TaskCard = ({ task, updateTask, assignUser }) => {
         </div>
         <div className="assigned-to">
           <strong>Assigned To:</strong>{" "}
-          {assignedTo.length > 0 ? assignedTo.join(", ") : "Not Assigned"}
+          {assignedTo && assignedTo.length > 0 ? assignedTo.join(", ") : "Not Assigned"}
         </div>
       </div>
       <div className="task-actions">
@@ -107,7 +124,7 @@ const TaskCard = ({ task, updateTask, assignUser }) => {
             <option value="">Select User</option>
             {users.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.username}
+                {user.username} 
               </option>
             ))}
           </select>
