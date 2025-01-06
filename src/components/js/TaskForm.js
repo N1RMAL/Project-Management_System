@@ -1,23 +1,22 @@
 import React, { useState } from "react";
 import "../css/TaskForm.css";
 
-const TaskForm = ({ addTask, users, addUser }) => {
+const TaskForm = ({ addTask, selectedGroup }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [newUser, setNewUser] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    addTask({ name, description });
+
+    if (!selectedGroup) {
+      alert("No group selected. Please navigate to a group to create a task.");
+      return;
+    }
+
+    // Add the task with the selected group
+    addTask({ name, description, group: selectedGroup });
     setName("");
     setDescription("");
-  };
-
-  const handleAddUser = () => {
-    if (newUser.trim()) {
-      addUser(newUser.trim());
-      setNewUser("");
-    }
   };
 
   return (
@@ -36,7 +35,9 @@ const TaskForm = ({ addTask, users, addUser }) => {
           onChange={(e) => setDescription(e.target.value)}
           required
         ></textarea>
-        <button type="submit" className="btn-primary">Add Task</button>
+        <button type="submit" className="btn-primary">
+          Add Task
+        </button>
       </form>
     </div>
   );

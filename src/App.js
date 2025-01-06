@@ -1,18 +1,21 @@
 import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import TaskForm from "./components/js/TaskForm";
 import TaskList from "./components/js/TaskList";
 import CompletedTasks from "./components/js/CompletedTasks";
-import LoginRegister from "./components/js/LoginRegister";
+import Login from "./components/js/Login";
 import Header from "./components/js/Header";
 import GroupSelection from "./components/js/GroupSelection";
 import "./App.css";
+import API from "./services/api";
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("access_token")
+  );
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
-  const [users, setUsers] = useState(["You"]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -21,35 +24,58 @@ const App = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setSelectedGroup(null);
+    localStorage.removeItem("access_token");
   };
 
-  const handleGroupSelect = (group) => {
-    setSelectedGroup(group);
-    setTasks([]); // Reset tasks for new group
-    setCompletedTasks([]); // Reset completed tasks for new group
+  const handleGroupSelect = async (group) => {
+    if (!group) {
+      console.error("Invalid group selected");
+      return;
+    }
+  
+    console.log("Group selected:", group); // Debugging log
+    setSelectedGroup(group); // Update selected group
+    setTasks([]); // Clear tasks state before fetching new tasks
+    setCompletedTasks([]); // Clear completed tasks state
+  
+    try {
+      // Fetch tasks for the selected group using group.id directly
+      const response = await API.get(`tasks/?group=${group.id}`);
+      console.log("Fetched tasks for group:", response.data); // Debugging log
+  
+      // Update tasks state with fetched data
+      const fetchedTasks = response.data || [];
+      setTasks(fetchedTasks.filter((task) => task.status !== "completed"));
+      setCompletedTasks(fetchedTasks.filter((task) => task.status === "completed"));
+    } catch (error) {
+      console.error(
+        "Error fetching tasks for the selected group:",
+        error.response?.data || error.message || error
+      );
+      alert("Failed to fetch tasks. Please try again.");
+    }
   };
-
-  const addTask = (task) => {
-    setTasks([...tasks, { ...task, id: tasks.length, status: "todo", assignedTo: [], time: 0, schedule: null, useTimer: true }]);
+  
+  
+  const addTask = async (task) => {
+    try {
+      const response = await API.post("tasks/", {
+        ...task,
+        group: selectedGroup.id, // Ensure group ID is passed
+      });
+      setTasks((prevTasks) => [...prevTasks, response.data]);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert("Failed to create task. Please try again.");
+    }
   };
 
   const updateTask = (id, updatedTask) => {
     setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, ...updatedTask } : task
-      )
+      prevTasks.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
     );
 
     if (updatedTask?.status === "completed") {
-      if (updatedTask.useTimer && updatedTask.time === 0) {
-        alert("Please stop the timer before completing the task.");
-        return;
-      }
-      if (!updatedTask.useTimer && !updatedTask.schedule) {
-        alert("Please set a schedule before completing the task.");
-        return;
-      }
-
       const totalTime = updatedTask.useTimer
         ? updatedTask.time
         : calculateScheduledTime(updatedTask.schedule);
@@ -59,22 +85,6 @@ const App = () => {
         { ...updatedTask, time: totalTime },
       ]);
       setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-    }
-  };
-
-  const assignUser = (id, user) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id
-          ? { ...task, assignedTo: [...task.assignedTo, user] }
-          : task
-      )
-    );
-  };
-
-  const addUser = (user) => {
-    if (!users.includes(user)) {
-      setUsers([...users, user]);
     }
   };
 
@@ -91,58 +101,62 @@ const App = () => {
   };
 
   return (
-    <div className="app-container">
-      {!isAuthenticated ? (
-        <LoginRegister onAuthenticate={handleLogin} />
-      ) : (
-        <>
-          <Header onLogout={handleLogout} onGroupSelect={handleGroupSelect} />
-          {!selectedGroup ? (
-            <GroupSelection onGroupSelect={handleGroupSelect} />
-          ) : (
-            <main className="app-main">
-              <div className="task-form-section">
-                <div className="task-creation">
-                  <h2 className="centered-heading">Create Task</h2>
-                  <TaskForm addTask={addTask} />
-                </div>
-                <div className="user-creation">
-                  <h2 className="centered-heading">Add User</h2>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const user = e.target.elements.username.value;
-                      if (user.trim()) {
-                        addUser(user.trim());
-                        e.target.reset();
-                      }
-                    }}
-                    className="centered-form"
-                  >
-                    <input
-                      type="text"
-                      name="username"
-                      placeholder="Enter user name"
-                      required
-                      className="centered-input"
-                    />
-                    <button type="submit" className="centered-button">Add User</button>
-                  </form>
-                </div>
-              </div>
-              <div className="task-lists-container">
-                <div className="current-tasks-section">
-                  <TaskList tasks={tasks} updateTask={updateTask} assignUser={assignUser} users={users} />
-                </div>
-                <div className="completed-tasks-section">
-                  <CompletedTasks completedTasks={completedTasks} />
-                </div>
-              </div>
-            </main>
-          )}
-        </>
-      )}
-    </div>
+    <Router>
+      <div className="app-container">
+        {!isAuthenticated ? (
+          <Routes>
+            <Route path="*" element={<Login onAuthenticate={handleLogin} />} />
+          </Routes>
+        ) : (
+          <>
+            <Header onLogout={handleLogout} onGroupSelect={handleGroupSelect} />
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  selectedGroup ? (
+                    <main className="app-main">
+                      <div className="task-form-section">
+                        <h2 className="centered-heading">Create Task</h2>
+                        <TaskForm addTask={addTask} selectedGroup={selectedGroup} />
+                      </div>
+                      <div className="task-lists-container">
+                        <div className="current-tasks-section">
+                          <TaskList
+                            tasks={tasks}
+                            updateTask={updateTask}
+                            assignUser={(id, user) => {
+                              setTasks((prevTasks) =>
+                                prevTasks.map((task) =>
+                                  task.id === id
+                                    ? { ...task, assignedTo: [...task.assignedTo, user] }
+                                    : task
+                                )
+                              );
+                            }}
+                            selectedGroup={selectedGroup}
+                          />
+                        </div>
+                        <div className="completed-tasks-section">
+                          <CompletedTasks completedTasks={completedTasks} />
+                        </div>
+                      </div>
+                    </main>
+                  ) : (
+                    <Navigate to="/groups" replace />
+                  )
+                }
+              />
+              <Route
+                path="/groups"
+                element={<GroupSelection onGroupSelect={handleGroupSelect} />}
+              />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </>
+        )}
+      </div>
+    </Router>
   );
 };
 

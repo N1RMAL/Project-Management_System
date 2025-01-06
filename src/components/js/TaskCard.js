@@ -1,13 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Timer from "./Timer";
 import "../css/TaskCard.css";
+import { getUsers } from "../../services/api"; // Function to fetch users from the backend
 
-const TaskCard = ({ task, updateTask, assignUser, users }) => {
+const TaskCard = ({ task, updateTask, assignUser }) => {
   const [startTime, setStartTime] = useState({ hours: "", minutes: "" });
   const [endTime, setEndTime] = useState({ hours: "", minutes: "" });
-  const [useTimer, setUseTimer] = useState(task.useTimer);
+  const [useTimer, setUseTimer] = useState(task.useTimer || true); // Default to true if missing
   const [selectedUser, setSelectedUser] = useState("");
+  const [users, setUsers] = useState([]); // State for fetched users
   const [scheduleSet, setScheduleSet] = useState(false);
+
+  // Fallback for task.assignedTo
+  const assignedTo = task.assignedTo || [];
+
+  useEffect(() => {
+    // Fetch users from the backend
+    const fetchUsers = async () => {
+      try {
+        console.log("Fetching users...");
+        const userData = await getUsers(); // API call to fetch users
+        console.log("Fetched users:", userData);
+        setUsers(userData); // Update users state
+      } catch (error) {
+        console.error("Error in fetchUsers:", error.message || error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
@@ -18,7 +39,7 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
     }
 
     if (newStatus === "completed") {
-      if (task.assignedTo.length === 0) {
+      if (assignedTo.length === 0) {
         alert("Please assign a user before completing the task.");
         return;
       }
@@ -59,11 +80,26 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
   };
 
   const handleAssignUser = () => {
-    if (selectedUser) {
-      assignUser(task.id, selectedUser);
-      setSelectedUser("");
+    if (!task) {
+      console.error("Task is undefined");
+      return;
     }
+  
+    if (!selectedUser) {
+      alert("Please select a user to assign.");
+      return;
+    }
+  
+    console.log("Assigning user:", selectedUser, "to task:", task.id);
+  
+    const updatedTask = {
+      ...task,
+      assignedTo: [...(task.assignedTo || []), selectedUser], // Add the selected user to assignedTo
+    };
+  
+    assignUser(task.id, selectedUser);
   };
+  
 
   return (
     <div className="task-card">
@@ -73,7 +109,8 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
           <p>{task.description}</p>
         </div>
         <div className="assigned-to">
-          <strong>Assigned To:</strong> {task.assignedTo.length > 0 ? task.assignedTo.join(", ") : "Not Assigned"}
+          <strong>Assigned To:</strong>{" "}
+          {assignedTo && assignedTo.length > 0 ? assignedTo.join(", ") : "Not Assigned"}
         </div>
       </div>
       <div className="task-actions">
@@ -85,9 +122,9 @@ const TaskCard = ({ task, updateTask, assignUser, users }) => {
             className="assign-select"
           >
             <option value="">Select User</option>
-            {users.map((user, index) => (
-              <option key={index} value={user}>
-                {user}
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.username} 
               </option>
             ))}
           </select>
