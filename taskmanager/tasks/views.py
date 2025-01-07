@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
-from .models import Task, Group, UserGroup
+from .models import Task, Group, GroupMember
 from .serializers import TaskSerializer, UserSerializer, GroupSerializer
 from django.contrib.auth.models import User
 
@@ -15,45 +15,40 @@ class GroupViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Return groups the user is a member of.
+        Return groups the authenticated user is a member of.
         """
-        return Group.objects.filter(members=self.request.user)
+        user = self.request.user
+        return Group.objects.filter(members=user)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for retrieving user details.
-    Accessible to anyone. Filters users by group if the current user is authenticated.
+    Filters users by group if the current user is authenticated.
     """
-    queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]  # Allow anyone to view users
+    permission_classes = [permissions.IsAuthenticated]  # Allow only authenticated users
 
     def get_queryset(self):
-        return User.objects.all()
-    #  current_user = self.request.user
-
-    #  if current_user.is_authenticated:
-    #     # Get group IDs the current user belongs to
-    #     user_groups = UserGroup.objects.filter(user=current_user).values_list("group", flat=True)
-        
-    #     # Return users who belong to the same groups as the current user
-    #     users = User.objects.filter(usergroup__group__in=user_groups).distinct()
-    #     print("Fetched users in get_queryset:", users)  # Debugging log
-    #     return users
-
-    # # For unauthenticated users, return none
-    #  return User.objects.none()
+        """
+        Return users in the same groups as the authenticated user.
+        """
+        user = self.request.user
+        if user.is_authenticated:
+            # Get group IDs the current user belongs to
+            user_groups = GroupMember.objects.filter(user=user).values_list("group", flat=True)
+            # Return users in the same groups
+            return User.objects.filter(groups__id__in=user_groups).distinct()
+        return User.objects.none()
 
 
 class TaskViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Tasks.
-    Allow anyone to view tasks, but keep write operations restricted if needed.
+    Allow anyone to view tasks, but restrict write operations to authenticated users.
     """
     serializer_class = TaskSerializer
-    queryset = Task.objects.all()
-    permission_classes = []  # Remove authentication requirement for viewing tasks
+    permission_classes = [permissions.AllowAny]  # Anyone can view tasks
 
     def get_queryset(self):
         """
@@ -61,19 +56,15 @@ class TaskViewSet(viewsets.ModelViewSet):
         """
         group_id = self.request.query_params.get("group")
         if group_id:
-            # Validate that the group exists
             group = Group.objects.filter(id=group_id).first()
             if not group:
                 raise PermissionDenied("The selected group does not exist.")
             return Task.objects.filter(group=group)
-
-        # Return all tasks if no group ID is specified
         return Task.objects.all()
 
     def perform_create(self, serializer):
         """
-        Allow only valid group-related task creation.
-        Remove this method if you want to restrict task creation entirely.
+        Ensure that tasks are created only for valid groups.
         """
         group = serializer.validated_data.get("group")
         if not group:
@@ -83,7 +74,6 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         """
         Restrict updates to ensure tasks belong to valid groups.
-        Remove this method if update functionality is restricted.
         """
         group = serializer.instance.group
         if not group:
